@@ -17,13 +17,76 @@
 	<script>
 	
 		// register the paths for required modules
-		jQuery.sap.registerModulePath("net.bytedoc.UI5","/res/UI5ext");
+		jQuery.sap.registerModulePath("net.bytedoc.UI5","ext");
 		jQuery.sap.require("net.bytedoc.UI5.JSONModelPHPFile");
 			// JSONModelPHPFile is required directly, because class used directly
 		jQuery.sap.registerModulePath("net.bytedoc.nicgps","view");
-		jQuery.sap.registerModulePath("net.bytedoc","/res/js");
+		jQuery.sap.registerModulePath("net.bytedoc","ext");
 		jQuery.sap.require("net.bytedoc.Helper");
 		
+		
+		// create the App "controller"
+		var oApp = {
+			dataSaved : true,
+			init : function() {
+				var app = this;
+				this.modelTimer = setInterval(function() { app.checkAllModels() }, 5000);
+			},
+			buttonSaveNow : null,
+			checkAllModels : function () {
+				//alert("checkAllModels");
+				var counterAll = 0;
+				var counterSaved = 0;
+				jQuery.each(oModels, function(key, item) {
+					if(!item.unsaved) {
+						counterSaved++;
+					}
+					counterAll++;
+				});
+				if(counterAll == counterSaved) {
+					if(!this.dataSaved) {
+						this.buttonSaveNowDeactivate();
+					}
+				} else {
+					this.buttonSaveNowActivate();
+				}
+				//alert("saved: " + counterSaved + " / " + counterAll);
+			},
+			buttonSaveNowTimeout : null,
+			buttonSaveNowActivate : function() {
+				this.buttonSaveNow.setText("save open changes now");
+				this.buttonSaveNow.setEnabled(true);
+				clearTimeout(this.buttonSaveNowTimeout);
+				$("#buttonSaveNow").fadeIn();
+				this.dataSaved = false;
+			},
+			buttonSaveNowDeactivate : function () {
+				this.buttonSaveNow.setText("all changes saved");
+				this.buttonSaveNow.setEnabled(false);
+				this.dataSaved = true;
+				this.buttonSaveNowTimeout = setTimeout(function() { $("#buttonSaveNow").fadeOut() }, 1000);
+			},
+			saveAllModels : function() {
+				jQuery.each(oModels, function(key, item) {
+					item.checkForSave();
+				});
+				this.checkAllModels();
+			},
+			eventDataChanged : function() {
+				var app = oApp;
+				app.buttonSaveNowActivate();
+			}
+		};
+		
+		var oButtonSaveNow = new sap.ui.commons.Button({
+			id : "buttonSaveNow",
+			text : "",
+			enabled : false,
+			press : function() {
+				oApp.saveAllModels();
+			}
+		});
+		oApp.buttonSaveNow = oButtonSaveNow;
 		
 		// Nic's GPS
 		// Application Structure:
@@ -58,6 +121,7 @@
 				oModels[item.entity] = new net.bytedoc.UI5.JSONModelPHPFile();
 				oModels[item.entity].loadDataFromFile(item.entity);
 				oModels[item.entity].startAutoSave();
+				oModels[item.entity].callbackDataChanged = oApp.eventDataChanged;
 			}
 			if(item.viewName != null) {
 				oViews[item.viewName] = sap.ui.view({
@@ -70,17 +134,6 @@
 			navigationItems.push(new sap.ui.ux3.NavigationItem(key,{item:item.key,text:item.text}));
 		});
 
-		
-		var oButtonSaveNow = new sap.ui.commons.Button({
-			id : "buttonSaveNow",
-			text : "",
-			enabled : false,
-			press : function() {
-				jQuery.each(oModels, function(key, item) {
-					item.checkForSave();
-				});
-			}
-		});
 				
 		// Shell
 		var oShell = new sap.ui.ux3.Shell("myShell", {
@@ -110,36 +163,8 @@
 		
 		
 		
-		// create the App "controller"
-		var oApp = {};
-		oApp.dataSaved = true;
-		oApp.modelTimer = setInterval(function() { oApp.checkAllModels() }, 5000);
-		oApp.checkAllModels = function () {
-			//alert("checkAllModels");
-			var counterAll = 0;
-			var counterSaved = 0;
-			jQuery.each(oModels, function(key, item) {
-				if(!item.unsaved) {
-					counterSaved++;
-				}
-				counterAll++;
-			});
-			if(counterAll == counterSaved) {
-				if(!this.dataSaved) {
-					oButtonSaveNow.setText("all changes saved");
-					oButtonSaveNow.setEnabled(false);
-					this.dataSaved = true;
-				} else {
-					$("#buttonSaveNow").fadeOut();
-				}
-			} else {
-				oButtonSaveNow.setText("save open changes now");
-				oButtonSaveNow.setEnabled(true);
-				$("#buttonSaveNow").fadeIn();
-				this.dataSaved = false;
-			}
-			//alert("saved: " + counterSaved + " / " + counterAll);
-		}
+		// Initialise the App "Controller"
+		oApp.init();
 		
 		// at this point the namespace object for the App configuration should be ready to be extended
 		//net.bytedoc.nicgps.Config = {};

@@ -15,7 +15,7 @@ if(preg_match('/^[a-z0-9\-\_]+$/i', $dataset)) {
 
 	// make backup of file if already exists
 	if(file_exists($filename)) {
-		$filenameBackup = "data/" . $dataset . date("YmdHis") . ".json";
+		$filenameBackup = "data/" . $dataset . "." . date("YmdHis") . ".json";
 		copy($filename, $filenameBackup);
 	}
 	

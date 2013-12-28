@@ -40,10 +40,12 @@ sap.ui.jsview("net.bytedoc.nicgps.WebRessourcen", {
 			navigationMode : sap.ui.table.NavigationMode.Paginator,
 			toolbar : oToolbar
 		});
+		var watchedControls = [];
 		// ## Kategorie ##
 		var oControl = new sap.ui.commons.TextField({
 			value : "{category}"
 		});
+		watchedControls.push(oControl);
 		oTable.addColumn(new sap.ui.table.Column({
 			label : new sap.ui.commons.Label({ text : "Kategorie"}),
 			template : oControl,
@@ -55,7 +57,7 @@ sap.ui.jsview("net.bytedoc.nicgps.WebRessourcen", {
 		oControl = new sap.ui.commons.TextField({
 			value : "{title}"
 		});
-		oControl.attachChange(oController.dataChanged);
+		watchedControls.push(oControl);
 		oTable.addColumn(new sap.ui.table.Column({
 			label : new sap.ui.commons.Label({ text : "Titel"}),
 			template : oControl,
@@ -79,6 +81,7 @@ sap.ui.jsview("net.bytedoc.nicgps.WebRessourcen", {
 		oControl = new sap.ui.commons.TextField({
 			value : "{href}"
 		});
+		watchedControls.push(oControl);
 		oTable.addColumn(new sap.ui.table.Column({
 			label : new sap.ui.commons.Label({ text : "Web Site"}),
 			template : oControl,
@@ -88,12 +91,17 @@ sap.ui.jsview("net.bytedoc.nicgps.WebRessourcen", {
 		}));
 		// ## Rating ##
 		oControl = new sap.ui.commons.RatingIndicator({ value : "{rating}" });
+		watchedControls.push(oControl);
 		oTable.addColumn(new sap.ui.table.Column({
 			label : new sap.ui.commons.Label({ text : "Rating" }),
 			template : oControl,
 			sortProperty : "rating",
 			filterProperty : "rating"
 		}));
+		
+		jQuery.each(watchedControls, function(key, item) {
+			item.attachChange(oController.dataChanged);
+		});
 		
 		oTable.bindRows("/");
 		// #### END Table ####	

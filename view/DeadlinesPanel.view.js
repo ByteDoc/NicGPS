@@ -37,11 +37,13 @@ sap.ui.jsview("net.bytedoc.nicgps.DeadlinesPanel", {
 			navigationMode : sap.ui.table.NavigationMode.Paginator,
 			toolbar : oToolbar
 		});
+		var watchedControls = [];
 		// ## Datum ##
 		var oControl = new sap.ui.commons.DatePicker({
 			yyyymmdd : "{date}",
 			locale : "de"
 		});
+		watchedControls.push(oControl);
 		oTableDeadlines.addColumn(new sap.ui.table.Column({
 			label : new sap.ui.commons.Label({ text : "Datum"}),
 			template : oControl,
@@ -53,6 +55,7 @@ sap.ui.jsview("net.bytedoc.nicgps.DeadlinesPanel", {
 		oControl = new sap.ui.commons.TextField({
 			value : "{title}"
 		});
+		watchedControls.push(oControl);
 		oTableDeadlines.addColumn(new sap.ui.table.Column({
 			label : new sap.ui.commons.Label({ text : "Titel"}),
 			template : oControl,
@@ -60,6 +63,9 @@ sap.ui.jsview("net.bytedoc.nicgps.DeadlinesPanel", {
 			filterProperty : "title",
 			width : "120px"
 		}));
+		jQuery.each(watchedControls, function(key, item) {
+			item.attachChange(oController.dataChanged);
+		});
 		oTableDeadlines.bindRows("/");
 		// #### End Table ####
 		

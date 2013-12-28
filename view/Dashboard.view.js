@@ -36,7 +36,9 @@ sap.ui.jsview("net.bytedoc.nicgps.Dashboard", {
 		});
 		var oModelDeadlinesPanel = new net.bytedoc.UI5.JSONModelPHPFile();
 		oModelDeadlinesPanel.loadDataFromFile("Deadlines");
-		oViewDeadlinesPanel.setModel(this.getModel());
+		oModelDeadlinesPanel.startAutoSave();
+		oModelDeadlinesPanel.callbackDataChanged = oApp.eventDataChanged;
+		oViewDeadlinesPanel.setModel(oModelDeadlinesPanel);
 		// add objects to global arrays
 		oViews["net.bytedoc.nicgps.DeadlinesPanel"] = oViewDeadlinesPanel;
 		oModels["Deadlines"] = oModelDeadlinesPanel;
