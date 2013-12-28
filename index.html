@@ -1,0 +1,158 @@
+<!DOCTYPE html>
+<html><head>
+<meta name="description" content="UI5 table example with local JSON model" />
+	<meta http-equiv='X-UA-Compatible' content='IE=edge' />
+	<meta http-equiv='Content-Type' content='text/html;charset=UTF-8'/>
+	
+	<title>UI5 Table Example</title>
+	
+	<!-- Load UI5, select gold reflection theme and the "commons" and "table" control libraries -->
+	<!-- Thems: sap_bluecrystal, sap_goldreflection -->
+	<script id='sap-ui-bootstrap' type='text/javascript'
+		src='/res/UI5/sap-ui-core.js'
+		data-sap-ui-language='en'
+		data-sap-ui-theme='sap_goldreflection'
+		data-sap-ui-libs='sap.ui.commons,sap.ui.table,sap.ui.ux3,sap.ui.core'></script>
+	
+	<script>
+	
+		// register the paths for required modules
+		jQuery.sap.registerModulePath("net.bytedoc.UI5","/res/UI5ext");
+		jQuery.sap.require("net.bytedoc.UI5.JSONModelPHPFile");
+			// JSONModelPHPFile is required directly, because class used directly
+		jQuery.sap.registerModulePath("net.bytedoc.nicgps","view");
+		jQuery.sap.registerModulePath("net.bytedoc","/res/js");
+		jQuery.sap.require("net.bytedoc.Helper");
+		
+		
+		// Nic's GPS
+		// Application Structure:
+		//   - Shell as main UI element
+		//   - views that contain table controls for data presentation and editing
+		
+		// create all the Workset Items and View Array
+		var oModels = {};
+		var oViews = {};
+		var navigationItems = []; // Navigation Items
+		// initiate the structure that holds the Metadata for
+		//   Navigation, Views, Data Entities
+		var shellWorksetItems = {
+			WI_home : {
+				key : "wi_home",
+				text : "Home",
+				view : null,
+				entity : "Dashboard",
+				viewName : "net.bytedoc.nicgps.Dashboard"
+			},
+			WI_portale : {
+				key : "wi_webressourcen",
+				text : "Web-Ressourcen",
+				view : null,
+				entity : "WebRessourcen",
+				viewName : "net.bytedoc.nicgps.WebRessourcen"
+			}
+		};
+		// create Models, Views and Workitems
+		jQuery.each(shellWorksetItems, function(key, item) {
+			if(item.entity != null) {
+				oModels[item.entity] = new net.bytedoc.UI5.JSONModelPHPFile();
+				oModels[item.entity].loadDataFromFile(item.entity);
+				oModels[item.entity].startAutoSave();
+			}
+			if(item.viewName != null) {
+				oViews[item.viewName] = sap.ui.view({
+					type : sap.ui.core.mvc.ViewType.JS,
+					viewName : item.viewName
+				});
+				item.view = oViews[item.viewName];
+				item.view.setModel(oModels[item.entity]);
+			}
+			navigationItems.push(new sap.ui.ux3.NavigationItem(key,{item:item.key,text:item.text}));
+		});
+
+		
+		var oButtonSaveNow = new sap.ui.commons.Button({
+			id : "buttonSaveNow",
+			text : "",
+			enabled : false,
+			press : function() {
+				jQuery.each(oModels, function(key, item) {
+					item.checkForSave();
+				});
+			}
+		});
+				
+		// Shell
+		var oShell = new sap.ui.ux3.Shell("myShell", {
+			designType: sap.ui.ux3.ShellDesignType.Crystal,
+				// ShellDesignType: Standard, Crystal, Light
+			headerType: sap.ui.ux3.ShellHeaderType.SlimNavigation,
+				// ShellHeaderType: Standard, BrandOnly, NoNavigation, SlimNavigation
+			showPane: true,
+			showTools: true,
+			showFeederTool: false,
+			showSearchTool: false,
+			appTitle: "Nic's GPS",
+			showLogoutButton: false,
+			worksetItems: navigationItems,
+			content: shellWorksetItems["WI_home"].view,
+			worksetItemSelected: function(oEvent) {
+				var sId = oEvent.getParameter("id");
+				var oShell = oEvent.oSource;
+				oShell.setContent(shellWorksetItems[sId].view);
+			},
+			headerItems: [
+				oButtonSaveNow
+			]
+		});
+		
+		oShell.placeAt('shell');
+		
+		
+		
+		// create the App "controller"
+		var oApp = {};
+		oApp.dataSaved = true;
+		oApp.modelTimer = setInterval(function() { oApp.checkAllModels() }, 5000);
+		oApp.checkAllModels = function () {
+			//alert("checkAllModels");
+			var counterAll = 0;
+			var counterSaved = 0;
+			jQuery.each(oModels, function(key, item) {
+				if(!item.unsaved) {
+					counterSaved++;
+				}
+				counterAll++;
+			});
+			if(counterAll == counterSaved) {
+				if(!this.dataSaved) {
+					oButtonSaveNow.setText("all changes saved");
+					oButtonSaveNow.setEnabled(false);
+					this.dataSaved = true;
+				} else {
+					$("#buttonSaveNow").fadeOut();
+				}
+			} else {
+				oButtonSaveNow.setText("save open changes now");
+				oButtonSaveNow.setEnabled(true);
+				$("#buttonSaveNow").fadeIn();
+				this.dataSaved = false;
+			}
+			//alert("saved: " + counterSaved + " / " + counterAll);
+		}
+		
+		// at this point the namespace object for the App configuration should be ready to be extended
+		//net.bytedoc.nicgps.Config = {};
+		//net.bytedoc.nicgps.Config.autoSave = true;
+		
+		
+		var myDebug = {};
+		
+		
+	</script>
+	
+	</head>
+	<body class='sapUiBody'>
+		<div id='shell'></div>
+	</body>
+</html>

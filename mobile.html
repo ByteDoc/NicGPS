@@ -1,0 +1,308 @@
+<!DOCTYPE HTML>
+<html>
+	<head>
+		<meta http-equiv="X-UA-Compatible" content="IE=edge" />
+		<meta http-equiv='Content-Type' content='text/html;charset=UTF-8'/>
+		
+		<title>Nic's GPS - Mobile Edition</title>
+		<!-- remote path for UI5 resources: https://sapui5.hana.ondemand.com/resources -->
+		<script src="https://sapui5.hana.ondemand.com/resources/sap-ui-core.js" 
+				id="sap-ui-bootstrap"
+				data-sap-ui-libs="sap.m,sap.ui.layout" 
+				data-sap-ui-xx-bindingSyntax="complex"
+				data-sap-ui-theme="sap_bluecrystal"></script>
+		<!-- load the mobile lib "sap.m", the layout lib and the "sap_bluecrystal" theme -->
+		
+		
+		<script type="text/javascript">
+			jQuery.sap.require("sap.m.MessageBox");
+			
+			
+			// create the data
+			sap.ui.model.json.JSONModel.extend("JSONModelPHPFile", {
+				loadService: "get_dataset_json.php",
+				saveService: "save_dataset_json.php",
+				saveMe: function() { 
+					//alert("saving");
+					// only save if called from server or local development environment
+					// alert(window.location.hostname);
+					if(window.location.hostname != "www.bytedoc.net" && window.location.hostname != "localhost") {
+						return;
+					}
+					jQuery.ajax({
+						url: this.getSaveUrl(),
+						type: "POST",
+						data: { dataset: this.dataset,
+								json: this.getJSON() }
+					});
+				},
+				getDataset: function() {
+					return this.dataset;
+				},
+				loadDataFromFile: function(sDataset) {
+					this.dataset = sDataset;
+					this.loadData(this.getLoadUrl());
+				},
+				getSaveUrl: function() {
+					return this.saveService;
+				},
+				getLoadUrl: function() {
+					var url = this.loadService + "?dataset=" + this.dataset;
+					// only save if called from server
+					if(window.location.hostname != "www.bytedoc.net") {
+						url = 'data/' + this.dataset + ".json";
+					}
+					return url;
+				}
+			});
+			
+			var oModelTest = new JSONModelPHPFile();
+			oModelTest.loadDataFromFile("test");
+
+			var listTest = new sap.m.List({
+				headerText: "Test Data"
+			});
+			
+			listTest.bindItems({
+				path : "/",
+				template : new sap.m.StandardListItem({
+					title : "{lastName}",
+					description : "{linkText}",
+					type : sap.m.ListType.Navigation,
+					press : function(oEvent) {
+						var oBindingContext = oEvent.getSource().getBindingContext(); // evt.getSource() is the ListItem
+						pageTestDetail.setBindingContext(oBindingContext); // make sure the detail page has the correct data context
+						app.to("pageTestDetail");
+					}
+				})
+			});
+			
+			
+			
+			// tile Container
+			var tileContainer = new sap.m.TileContainer({
+				tiles: [
+					new sap.m.StandardTile({
+						icon: "sap-icon://course-book",
+						title: "Bücher/Test",
+						number: "23",
+						info: "Paper,eBook,Audio",
+						press: function() { app.to("pageTestList") }
+					}),
+					new sap.m.StandardTile({
+						title : "Example List",
+						press : function() { app.to("page1") }
+					})
+				]
+			});
+			// tile Page
+			var pageTiles = new sap.m.Page("pageTiles", {
+				title: "Nic's GPS",
+				enableScrolling: false, // needed for correct display of tileContainer
+				content: tileContainer
+				//footer: new sap.m.Bar({
+				//	contentMiddle: new sap.m.Label({
+				//		text: "OK"
+				//	})
+				//})
+			});
+			// A882AC1C57
+			var pageTestList = new sap.m.Page("pageTestList", {
+				title : "Test List Page",
+				content : listTest,
+				showNavButton: true,
+				navButtonPress: function(){
+					app.back();
+				},
+				footer : new sap.m.Bar({
+					contentRight : new sap.m.Button({
+						text : "Save online",
+						icon : "sap-icon://save",
+						press : function() { oModelTest.saveMe() }
+					})
+				})
+			});
+			
+			var myEvent = 0;
+			var footerTestDetailRead = new sap.m.Bar({
+				contentRight : [
+					new sap.m.Button({
+						text : "Edit",
+						icon : "sap-icon://edit",
+						press : function(oEvent) {
+							pageTestDetail.setFooter(footerTestDetailEdit);
+							inputLastName.setEditable(true);
+							inputName.setEditable(true);
+						}
+					}),
+					new sap.m.Button({
+						text : "Delete",
+						icon : "sap-icon://delete",
+						press : function(oEvent) {
+							sap.m.MessageBox.show(
+								"Eintrag wirklich löschen?",
+								"sap-icon://hint",
+								"Bestätigung erforderlich",
+								[sap.m.MessageBox.Action.OK, sap.m.MessageBox.Action.CANCEL ],
+								function(sAction) {
+									if(sAction == sap.m.MessageBox.Action.OK) {
+										var indexToDelete = pageTestDetail.getBindingContext().sPath.replace(/^\//g,'');
+										oModelTest.oData.splice(indexToDelete, 1);
+										oModelTest.refresh();
+										app.backToPage("pageTestList");
+									}
+								}
+							);
+						}
+					})
+				]
+			});
+			
+			var footerTestDetailEdit = new sap.m.Bar({
+				contentRight : [
+					new sap.m.Button({
+						text : "Cancel",
+						icon : "sap-icon://cancel",
+						press : function(oEvent) {
+							inputLastName.setEditable(true);
+							inputName.setEditable(true);
+							pageTestDetail.setFooter(footerTestDetailRead);
+						}
+					}),
+					new sap.m.Button({
+						text : "Save",
+						icon : "sap-icon://save",
+						press : function(oEvent) {
+							inputLastName.setEditable(false);
+							inputName.setEditable(false);
+							pageTestDetail.setFooter(footerTestDetailRead);
+						}
+					})
+				]
+			});
+			
+			var inputLastName = new sap.m.Input({
+				type : sap.m.InputType.Text,
+				value : "{lastName}",
+				placeholder : "Last Name",
+				editable : false });
+			var inputName = new sap.m.Input({
+				type : sap.m.InputType.Text,
+				value : "{name}",
+				placeholder : "First Name",
+				editable : false });
+			var inputFields = [];
+			inputFields.push(inputLastName);
+			inputFields.push(inputName);
+			function setInputFieldsEditable(editable) {
+				inputFields.each(function(index, value) {
+					value.setEditable(editable);
+				});
+			}
+			var pageTestDetail = new sap.m.Page("pageTestDetail", {
+				title : "Test Detail Data",
+				content: new sap.m.VBox({
+					items : [
+						new sap.m.Label({ text : "Last Name" }),
+						inputLastName,
+						new sap.m.Label({ text : "First Name" }),
+						inputName
+					]
+				}),
+				showNavButton: true,
+				navButtonPress: function(){
+					app.back();
+				},
+				footer : footerTestDetailRead
+			});
+			
+			
+			
+			// EXAMPLE
+			// create some dummy JSON data
+			var data = {
+				names: [
+					{firstName: "Peter", lastName: "Mueller"},
+					{firstName: "Petra", lastName: "Maier"},
+					{firstName: "Thomas", lastName: "Smith"},
+					{firstName: "John", lastName: "Williams"},
+					{firstName: "Maria", lastName: "Jones"}
+				]
+			};
+			// create a Model with this data
+			var model = new sap.ui.model.json.JSONModel();
+			model.setData(data);
+			// create the UI
+			// create a List control
+			var list = new sap.m.List({
+				headerText:"Names"
+			});
+			// bind the List items to the data collection
+			list.bindItems({
+				path : "/names", 
+				sorter : new sap.ui.model.Sorter("lastName"),
+				template : new sap.m.StandardListItem({
+					title: "{lastName}",
+					description: "{firstName}",
+					type: sap.m.ListType.Navigation,
+					press:function(evt){
+						var oBindingContext = evt.getSource().getBindingContext(); // evt.getSource() is the ListItem
+						page2.setBindingContext(oBindingContext); // make sure the detail page has the correct data context
+						app.to("page2");
+					}
+				})
+			});
+			// create the page holding the List
+			var page1 = new sap.m.Page("page1", {
+				title: "List Page",
+				content : list,
+				showNavButton: true,
+				navButtonPress: function(){
+					app.back();
+				}
+			});
+			// create the detail page
+			var page2 = new sap.m.Page("page2", {
+				title: "Detail Page",
+				showNavButton: true,
+				navButtonPress: function(){
+					app.back();
+				},
+				content : [
+					new sap.ui.layout.form.SimpleForm({ 
+						title: "Details for {firstName} {lastName}",
+						content: [
+							new sap.m.Label({text: "First Name"}),
+							new sap.m.Text({text: "{firstName}"}),
+							new sap.m.Label({text: "Last Name"}),
+							new sap.m.Text({text: "{lastName}"})
+						]
+					})
+				]
+			});
+			
+			
+			
+			
+			
+			// create a mobile App holding the pages and place the App into the HTML document
+			var app = new sap.m.App({
+				pages: [pageTiles, pageTestList, pageTestDetail, page1, page2]
+			}).placeAt("content");
+			
+			// set the model to the App; it will be propagated to the children
+			//app.setModel(oModelTest);
+			//app.setModel(model);
+			pageTestList.setModel(oModelTest);
+			pageTestDetail.setModel(oModelTest);
+			page1.setModel(model);
+			page2.setModel(model);
+			
+		</script>
+		
+	</head>
+	<body id="content" class="sapUiBody">
+	</body>
+</html>
+
+  
