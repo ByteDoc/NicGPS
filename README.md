@@ -1,6 +1,7 @@
 # NicGPS
 
-a **Personal Information Portal** and an **OpenUI5 Learning Project**
+a **Personal Information Portal** and an **OpenUI5 Learning Project**  
+Tracking of tasks at <https://trello.com/b/DARllx4G/ui5-meets-symfony-nic-gps>
 
 ## Use Case
 
