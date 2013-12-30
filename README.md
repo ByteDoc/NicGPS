@@ -3,6 +3,8 @@
 a **Personal Information Portal** and an **OpenUI5 Learning Project**  
 Tracking of tasks at <https://trello.com/b/DARllx4G/ui5-meets-symfony-nic-gps>
 
+>**! ! ! Development moved to a Symfony Bundle (<https://github.com/ByteDoc/NicGPS-SymfonyBundle>) ! ! !**
+
 ## Use Case
 
 This application provides easy access to a set of information, including a dashboard, for personal information management. The "target user" of this application is my lovely wife, Nicole, therefore the given example data entities reflect parts of her needs and interests.
